@@ -50,13 +50,25 @@
 \newcommand{\rpos}{\mathbb{R}_{>0}}
 
 \begin{document}
-\title{Doppler: A liquidity bootstrapping ecosystem [Draft]}
-\subtitle{Aug 2024}
-\date{Aug 2024}
+\title{Doppler: A liquidity bootstrapping ecosystem}
+\subtitle{Jan 2024}
+\date{Jan 2024}
 
 \author{Austin Adams}
 \affiliation{}
 \email{austin@whetstone.cc}
+
+\author{Matt Czernik}
+\affiliation{}
+\email{matt@whetstone.cc}
+
+\author{Clement Lakhal}
+\affiliation{}
+\email{clement@whetstone.cc}
+
+\author{Kaden Zipfel}
+\affiliation{}
+\email{kadenzipfel@gmail.com}
 
 \begin{teaserfigure}
 \caption*{
@@ -73,31 +85,29 @@ Doppler is a liquidity bootstrapping ecosystem that facilitates liquidity provis
 \maketitle
 
 \section{Introduction} \label{sec:introduction}
-The rise of automated market makers (AMMs), such as the Uniswap Protocol \cite{Adams21}, and the subsequent shift in market structure towards automated pricing algorithms has resulted in an exponential increase in the number of traded onchain assets, with more than 910,000\footnote{Source: https://dune.com/queries/3891972} unique traded assets created as of writing. Despite this, token projects continue to struggle to bootstrap liquidity, and oftentimes must outsource to automated liquidity management protocols or onchain market making desks, which generally take a sizeable portion of the provided assets. 
+The rise of automated market makers (AMMs) has fundamentally transformed digital asset trading. Protocols, such as the Uniswap Protocol \cite{Adams21}, have resulted in a shift towards automated pricing algorithms. This shift has created an exponential increase in the number of traded onchain assets, with more than 910,000\footnote{Source: https://dune.com/queries/3891972} unique traded assets created as of writing. Despite this, token projects continue to struggle to bootstrap liquidity, and oftentimes must outsource to automated liquidity management protocols or onchain market making desks, which generally take a sizeable portion of the provided assets. 
 
 However, one benefit of blockchain-based ecosystems is that they allow for programmable markets. Just as the Uniswap Protocol is designed to facilitate trading through an $xy=k$ model, a similar model could be created to bootstrap liquidity. Indeed, we have already seen such projects on both Solana, Tron, and Ethereum.
 
 Traditionally, the problem with creating new market structures is the difficulty of creating customized AMM protocols, which require expertise and significant time and capital investment. However, the forthcoming \textsc{Uniswap v4} \cite{Adams23} improves the customization and integrator experience of AMMs by introducing hooks, which can execute developer-defined logic at specific points in the transaction's lifecycle. While \textsc{Uniswap v3} \cite{Adams21} focused on optimizing the most common trading flow, \textsc{Uniswap v4} allows custom market structure models for specialized tasks.
 
 \section{Background} 
-\label{sec:Background}
+\label{sec:Background} 
 
-The rise of AMMs and resulting increase of trade-able assets present their own challenges. Creating liquid pools is a common source of friction for users and token projects. For example, \textsc{Uniswap v2} \cite{Adams20} requires token projects to provide two assets to create a fully liquid pool. Token projects must therefore not only acquire the tokens needed to fund both sides of the pool, which can be a substantial financial barrier, but also take a stance on the price of both assets and run the risk of incurring significant losses if that stance is wrong. While projects such as \textsc{Uniswap v3} \cite{Adams21} have utilized single-sided liquidity, which requires only one asset, token projects must still take an initial stance on the asset’s price. 
+The proliferation of AMMs has created new challenges in market structure and liquidity formation. Traditional AMM designs require significant upfront capital commitments from token projects. For instance, \textsc{Uniswap v2} \cite{Adams20} requires two-sided liquidity provision, creating both financial and technical barriers to market formation. Projects must not only secure substantial capital for both sides of the pool but also determine appropriate initial pricing which carries significant risk of capital loss through mispricing. While projects such as \textsc{Uniswap v3} \cite{Adams21} have utilized single-sided liquidity, which requires only one asset, token projects must still take an initial stance on the asset’s price. 
 
-Creating liquid pools is further complicated by the need to find the initial market price, which is both difficult and a very impactful problem for liquidity provision. If the initial price is too low, then significant capital is lost from the instantaneous arbitrage. If the price is too high, then no trading will occur. 
+The challenge of initial price discovery is particularly problematic for initial liquidity provision. Generally, because of arbitrage forces, the pool already liquid and is in-line with the market price, so adding more liquidity does not create the potential for more losses. However, initial liquidity provision does not have this guarantee. Projects face a difficult trade-off: setting initial prices too low results in immediate capital loss through arbitrage, while setting prices too high inhibits trading activity entirely. 
 
 A fundamental nature of permissionless systems, like email or TCP, is the vast amount of value-less user generated content. This type of market structure is formalized in Oh \cite{oh2023digital}, which models non-fungible tokens (NFTs) as "digital Veblen goods." The implication of this model is that the purchasing of an asset greatly increases likelihood that a product is valuable.
 
 This market dynamic is well-supported by static bonding curves implemented in projects like friendtech. Bonding curves start assets with cheap prices with the next trade being marginally more expensive than the previous. However, these protocols can run into significant issues from programmatic bots, who buy these cheap assets and instantly sell if the price increases. This strategy is very low risk, because the bonding curves are static. The initial buyers of the tokens cannot lose any money. The price either goes up as new users buy, allowing the initial buyers to sell and collect a profit, or (if no one bought) they sell at the original price they paid (due to the static bonding curve). Single-sided liquidity bootstrapping from Intuitive Launch Pool functions similarly to this model, utilizing concentrated liquidity math as the bonding curve.
 
-Another problem plaguing onchain markets is inconsistent or malicious token code. Because the ERC20 is a standard, there are many implementations that fit the standard, making them available for trading. Many liquidity bootstrapping projects solve this problem by providing a singular token contract with known code and invariants.
-
 Doppler provides a dutch-auction dynamic bonding curves liquidity bootstrapping hook and a token factory to create ERC20s with known bytecode. This allows ecosystems to go from token deployment to liquid generalized automated market maker, like Uniswap v2 or Uniswap v4, without user intervention. 
 
 \begin{itemize}
-    \item \emph{Dutch-auction Dynamic Bonding Curves}: Price discovery of assets is facilitated through the dutch-auction dynamic bonding curve. This mechanism is built on top of \textsc{Uniswap v4}, facilitating automated price discovery and auctioning without intervention. Additionally, user experience should be identical to and supported by the current swapping experience. 
+    \item \emph{Dutch-auction Dynamic Bonding Curves}: Price discovery of assets is facilitated through a dutch-auction dynamic bonding curve. This mechanism is built on top of \textsc{Uniswap v4}, facilitating automated price discovery and auctioning without intervention. Additionally, user experience should be identical to and supported by the current swapping experience. 
     \item \emph{Token contract Factory}: The ecosystem utilizes a token contract factory to deploy ERC20s with known bytecode. This bytecode removes many of the malicious implementations prevalent in the EVM ecosystems and allows 3rd party interfaces to quickly check bytecode. Additionally, this factory and hook combine to enforce invariants on token trading.
-    \item \emph{Direct to \textsc{generalized liquidity}}: Once the required tokens are bootstrapped to create a liquid pool, the \textsc{Uniswap v4} hook contract deposits the funds directly into a generalized AMM without intervention. However, unlike other liquidity bootstrapping implementations, the underlying LP share tokens are not burned. In future versions, users can choose between \textsc{Uniswap v2}, a \textsc{CFMM on Uniswap v4}, or any arbitrary \textsc{Uniswap Protocol} pools.
+    \item \emph{Direct to \textsc{generalized liquidity}}: Once the required tokens are bootstrapped to create a liquid pool, the \textsc{Uniswap v4} hook contract deposits the funds into a generalized AMM without intervention. However, unlike other liquidity bootstrapping implementations, the underlying LP share tokens are not burned. In future versions, users can choose between \textsc{Uniswap v2}, a \textsc{CFMM on Uniswap v4}, or any arbitrary \textsc{Uniswap Protocol} pools.
     \item \emph{Time-locked liquidity}: Liquidity tokens for the generalized liquidity pool are time-locked initially, but can be withdrawn at a later date. This is to ensure that a community around that token can optionally utilize these funds at a later date.
 \end{itemize}
 
@@ -110,7 +120,7 @@ The following sections provide in-depth explanations of each part of the token d
 
 \subsection{Background}
 
-Dutch auctions are a well-understood auction format, and have been studied deeply for onchain markets in pieces such as Frankie (2022) \cite{frankie2022gda} and Moallemi (2024) \cite{moallemi2024loss}. Dutch auctions are descending price auctions, where the auction starts at a high price and decays until a market clearing price is found. They are generally utilized within onchain markets due to their efficient implementation and "shill-proof" properties \cite{komo2024shillproofauctions}. To expand on this, in blockchain-based markets, bidding both reveals private information their about bids to all other market participants and the cost of bidding is non-zero (due to gas). This means when bidding a bidder essentially pays to give all other parties free private information about their bid. This causes drag on market efficiency. Dutch auctions also allow a fixed payoff from bidding, which creates a straightforward assessment for market participants on if they want to bid (revealing information to the rest of the market). 
+Dutch auctions are a well-understood auction format, and have been studied deeply for blockchain-based markets in pieces such as Frankie (2022) \cite{frankie2022gda} and Moallemi (2024) \cite{moallemi2024loss}. Dutch auctions are descending price auctions, where the auction starts at a high price and decays until a market clearing price is found. They are generally utilized within onchain markets due to their efficient implementation and "shill-proof" properties \cite{komo2024shillproofauctions}. The descending price structure of Dutch auctions naturally mitigates the information asymmetry challenges inherent in blockchain markets, where bid revelation carries both explicit costs through gas fees and implicit costs through information leakage. Dutch auctions provide market participants with clear decision boundaries, enabling more efficient price discovery while minimizing strategic gaming opportunities.
 
 On the other hand, bonding curves are another widely used blockchain-based markets primitive, which attempts to mimic the laws of supply and demand. As previously stated, static bonding curves have significant issues around determining the optimal starting levels. Too low a starting price, and significant value is lost due to the instantaneous arbitrage. Additionally, this value is lost to programmatic users who will instantly dump on other users, causing losses for users who desire long-term exposure to that ecosystem. For context, instantaneous arbitrage has cost token deployers over +\$100 million dollars on Ethereum mainnet over the last year\footnote{Source: https://dune.com/queries/3682272/6193594}. Likewise, instantaneous arbitrage and MEV have cost more than \$400m from users on pumpdotfun on Solana\footnote{Source: https://x.com/0xngmi/status/1823399442306801974}. 
 Too high and trades never occur, but this is heavily mitigated by the dutch auction mechanism.
@@ -125,7 +135,7 @@ The dutch-auction dynamic bonding curve has two phases
 
  The optimal price curve is shown below. The price of the marginal token rapidly decreases until users begin buying, and the bonding curve behavior begins. This market behavior encourages the starting price of the dutch auction to be higher than "the market price", limiting losses from instantaneous arbitrage.
  
- It is important to note that if the price were to start "too low", the descending price auction would not occur, and regular dynamic bonding curve behavior would begin. There is no requirement in this mechanism for the descending price behavior - it is simply encouraged to maximize eventual liquidity. However, a significant price movement would cause the bonding curves to shift upward in a process that will be described in a later section.
+ It is important to note that if the price were to start "too low", the descending price auction would not occur, and the dynamic bonding curve behavior would begin. There is no requirement in this mechanism for the descending price behavior - it is simply encouraged to maximize eventual liquidity. However, a significant price movement would cause the bonding curves to shift upward in a process that will be described in a later section.
 
 \begin{figure}[htb]
     \label{fig:price_curve}
@@ -141,13 +151,13 @@ The dutch-auction dynamic bonding curve has two phases
 
 \subsubsection{Liquidity Provision}
 
-In order to minimize losses to instantaneous arbitrage, \verb|Doppler| streams liquidity into the pool at a configurable rate at each time. We define this liquidity at time $t$ as $\lambda_t$. In the current implementation, we stream a constant amount of liquidity into the pool at the start of each epoch. However, this could be adapted to arbitrary liquidity functions.
+In order to protect against instantaneous arbitrage, \verb|Doppler| streams liquidity into the pool at a configurable rate at each time. We define this liquidity at time $t$ as $\lambda_t$. While the current implementation utilizes a constant streaming rate at epoch boundaries, this is only to simplify the code base. 
 
-In order to facilitate optimal price movement, Doppler also keeps track of $\hat{\lambda_t}$, which tracks the realized amount of "net-sold" tokens within the system. "Net-sold" tokens is defined as the number of tokens that are held outside of the bonding curve. We utilize the difference between realized liquidity vs. expected liquidity to adjust the bonding curve's price over time. 
+The protocol tracks two critical liquidity metrics: the expected tokens sold ($\lambda_t$) and realized amount of "net-sold" tokens ($\hat{\lambda_t}$). The latter metric tracks tokens held outside the bonding curve system, providing a crucial measure of market absorption capacity. The differential between these metrics serves as a primary input for the dynamic adjustment of price curves over time.
 
 \subsubsection{Dutch Auction}
 
-The dutch auction handles the decrease in price of tokens within the system. To start, the beginning price and end price of the dutch auction behavior is configurable by the interface that submits the trade. A interface may adjust these parameters depending on the expected starting price, potential volatility of the token, or based on broader market conditions. 
+The dutch auction handles the decrease in price of tokens within the system. To start, the beginning price and end price of the dutch auction behavior is configurable by an interface that submits the trade. Interfaces may adjust these parameters depending on the expected starting price, potential volatility of the token, or based on broader market conditions. 
 
 Similar to other dutch auction protocols like UniswapX \cite{adamsuniswapx} or 1inch Fusion \cite{1inchfusion}, Doppler uses a step-wise decaying function. In practice, due to \verb|tickSpacing| in \textsc{Uniswap v4}, the price may not actually decay until it has passed a \verb|tickSpacing|. 
 
@@ -173,9 +183,9 @@ Similar to other dutch auction protocols like UniswapX \cite{adamsuniswapx} or 1
 
 Notice that the y-axis in Figure 2 says \verb|tick|. Due to implementation details of \textsc{Uniswap v4}, it is easier to decay the price in log-space. This is implemented through a linear decay of the underlying ticks from a given \verb|maxTick| to a given \verb|minTick|, which are then mapped into the price using concentrated liquidity math. 
 
-Ideally, the decay should never reach \verb|minTick|, as the bonding curve (described below) should take over price discovery. If the end of the sale time is reached and the required proceeds are not met, users are refunded a pro-rata share of the pool holdings if under a minimum threshold. Above this threshold will cause the liquidity to be sent to \textsc{Uniswap v2} in the current design. The natural state of the pool is decaying to \verb|minTick|, which will occur if no tokens are purchased.
+Ideally, the decay should never reach \verb|minTick|, as the bonding curve (described below) should take over price discovery. If the end of the sale time is reached and the required proceeds are not met, users are refunded a pro-rata share of the pool holdings if under the minimum threshold. Above this threshold will cause the liquidity to be sent to \textsc{Uniswap v2} in the current design. The natural state of the pool is decaying to \verb|minTick|, which will occur if no tokens are purchased. 
 
-To support price movements caused by both the dutch auction and the dynamic bonding curve, the hook contract keeps an \verb|tickAccumulator| that tracks the tick changes applied by the two mechanisms.
+To support price movements caused by both the dutch auction and the dynamic bonding curve, the hook contract keeps an \verb|tickAccumulator| that aggregates tick adjustments from both mechanisms. 
 
 Since we are linearly dutch auctioning, we can define the max decrease as such
 
@@ -200,7 +210,7 @@ The \verb|tickDelta| is added to the \verb|tickAccumulator| during the rebalance
     tickAccumulator_t = \sum^t_{i=0} tickDelta_i 
 \end{equation}
 
-If the \verb|tickDelta| is 0, then either the expected number of tokens were sold.
+If the \verb|tickDelta| is 0, then exactly the expected number of tokens were sold.
 
 \subsubsection{Dynamic Bonding Curves} 
 
@@ -260,50 +270,85 @@ In \textsc{Uniswap v4}, $i_c$ is the current tick of the pool, determined throug
 
 Because the bonding curve is set in the \verb|beforeSwap| hook in \textsc{Uniswap v4}, the hook is able to respond to manipulations during their execution (and cannot be censored). Because of this, a manipulator would lose funds from the shifting of the bonding curve, functioning as limit orders which are a strong mitigation to manipulations. Additionally, the portion of the bonding curve that allows selling of the tokens back may disjoint itself in a process described below.
 
-On Ethereum mainnet (or any chain without strong censorship resistance\cite{fox2023}), it is possible for multiple slots in a row to be purchased by a manipulator (multi-block MEV). This actor could censor buy transactions until the price of the pool decreases, locking in an  lower than market clearing price. A mitigation to this attack is that the price increase defined by the provided $\gamma$ should always be greater than \verb|maxDelta|. Additionally, a chain could be utilized with censorship resistance, meaning that that this censorship would always lose to in priority gas auction for a backrun. This is because the rebalances occur before the first trade of the epoch, meaning that manipulations would need to span blocks and epochs. In practice, extractive multi-block MEV is rare on Ethereum mainnet due to validators' incentives. This problem is not present on any chain with censorship resistance, like most Layer 2 protocols.
+On Ethereum mainnet (or any chain without strong censorship resistance\cite{fox2023}), it is possible for multiple slots in a row to be purchased by a manipulator (multi-block MEV). This actor could censor buy transactions until the price of the pool decreases, locking in a  lower than market clearing price. A mitigation to this attack is that the price increase defined by the provided $\gamma$ should always be greater than \verb|maxDelta|. Additionally, a chain could be utilized with censorship resistance, meaning that that this censorship would always lose to in priority gas auction for a backrun. This is because the rebalances occur before the first trade of the epoch, meaning that manipulations would need to span blocks and epochs. In practice, extractive multi-block MEV is rare on Ethereum mainnet due to validators' incentives. This problem is not present on any chain with censorship resistance, like most Layer 2 protocols.
 
 One key design decision is to keep both tokens in the pool fully liquid at all times. However, it is possible that the current bonding curve does not have enough quote token liquidity to support $b_c(t)$ from $\tau_t$ to $i_c$. This is likely from a misspecified starting price or rapid price appreciation (either manipulations or naturally). 
 
 If the pool is in this state, then we utilize two different $b_c(t)$ above and below the current $i_c$. The only way to move the $i_c$ down would be selling tokens into the pool. In this state, we create a one \verb|tickSpacing|-wide position at the price which supports a theoretical liquidation of the entire net-sold liquidity amount, $\hat{\lambda_t}$. This is to discourage run behavior and give a common clearing price to all users who wish to sell back their tokens.
 
-\section{Token-contract Factory}
+\section{Airlock and Factory Modules}
+The Doppler ecosystem implements a modular architecture centered around an airlock contract that serves as the primary entry point for system integration. This design enables seamless progression from token deployment to fully operational AMM markets while maintaining robust security guarantees.
 
-While utilizing a set standard for token contracts is not a new innovation, the design of the token contract factory is made to optimize for interface developer experience. However, the token factory is not required to utilize the \verb|Uniswap v4| hook, so this will only serve as an overview.
+\subsection{Core Architecture}
+The airlock contract manages system progression through a "turnkey" mechanism that coordinates the sequential execution of module functions. This orchestration allows the system to automatically advance through deployment stages without requiring additional user intervention. The modular design philosophy, inspired by \verb|Uniswap v4|'s hook architecture, separates core functionalities into distinct, immutable contracts while maintaining system flexibility.
 
-\subsection{Background}
-While the ERC20 token contracts have a set of standards for most common actions, the specification is designed to be as minimalist as possible. For example, many tokens trading on decentralized markets today utilize a "fee-on-transfer" (FoT) mechanism, which adds an additional fee for every trade. There is no common standard for this flow.
-
-Lack of a FoT standard causes interfaces issues when setting slippage limits (the minimum amount of tokens received for the swap). In practice, this requires interfaces to check if transferring a token adds an additional fee, which is not always accurate and requires chain RPC calls.
-
-Another prevalent issue on EVM-based blockchains is that the token contracts are entirely programmable, which can lead to bad outcomes for end users. For example, some malicious ERC20 contracts allow wallets to mint infinite amounts of the new token, which is then used to rug-pull the token. Many popular apps for trading newly created tokens will use heuristics to check the token contract for common scams, but this leads to an unwinnable arms race for these interfaces. 
-
-It would be better to instead assert that the token contract came from a known source with known bytecode. This flow is known as a "factory-pair" model and is commonly supported in decentralized finance applications.
-
-\subsection{Implementation}
-
-Doppler provides a factory that deploys ERC20s with bytecode that includes invariants. On initialization, users can provide a number of feature flags to set the adjust how the token works. These features all have standard "getters" for interfaces to check these token flags.
-
-While not an exhaustive list, some of the feature flags are:
+The ecosystem comprises four primary module types that integrate with the airlock system:
 
 \begin{itemize}
-    \item Fee on token transfers
-    \item Buy taxes (and exclusions)
-    \item Sell taxes (and exclusions)
-    \item Various types of distributions of those taxes
-    \item Initial airdrops to wallets
+    \item Token Factory
+    \item Liquidity Factory
+    \item Migration Factory
+    \item Timelock Factory
 \end{itemize}
+
+The benefit of this system is the rapid creation of new user actions while the previous code remains immutable for existing developers. Users can additionally modify only one specific action without editing others, supporting customization without requiring the redeployment of the entire Protocol. 
+
+We will provide a quick overview of each factory.
+
+\subsubsection{Token Factory}
+
+The token factory addresses a fundamental challenge in decentralized markets: the proliferation of potentially malicious token implementations. While the ERC20 standard defines basic token functionality, its minimalist specification leaves considerable room for harmful implementations. Traditional approaches rely on heuristic checks to identify malicious contracts, creating an unsustainable arms race between security measures and exploitation techniques. By using a factory, swappers and integrators can trust that any arbitrary user-deployed contracts that emerge from the factory will meet certain standards. 
+
+In the near future, new modules that allow even more trustless customization will be created for the token factory, extending the possible use-cases for integrators. We note that the Airlock contract itself checks several invariants in the system to further mitigate possible attack vectors, but cannot reasonably check for every possible attack.
+
+\subsubsection{Liquidity Factory}
+
+The liquidity factory creates and facilitates the entire process of generating the other token liquidity. While the core Doppler Protocol uses \verb|Uniswap v4|, the liquidity hook is fully generalized to support the use of Uniswap v3 or any other AMM.
+
+To interact with the liquidity factory, the Airlock facilitates the call to the liquidity factory and seeds the chosen liquidity bootstrapping pool (LBP) with a user-defined share of the token supply. The Airlock can poke the LBP to return the quote asset to then initiate the migration step. The LBP can additionally poke the Airlock to power the turnkey. It is possible for the liquidity generation step to fail if not enough proceeds are not generated, which is a parameter defined by the user. In this case, the Airlock will not migrate the liquidity.
+
+To showcase the flexibility of the liquidity factory, a reference implementation of a \verb|Uniswap v3| liquidity hook for Doppler is also shown in the project's \href{https://github.com/whetstoneresearch/doppler/tree/main}{GitHub}.
+
+\subsubsection{Migration Factory}
+
+Once required proceeds are generated through the LBP as part of the liquidity factory, the Airlock pulls the quote proceeds and remaining asset tokens to the migration factory. The migration factory facilitates the creation of the generalized AMM position while minimizing MEV lost. The current implementation targets Uniswap v2 as the destination protocol, leveraging its proven stability and broad ecosystem support. However, the modular architecture enables future expansion to support migrations to Uniswap v3, v4, or other AMM protocols as market needs evolve.
+
+\subsubsection{Timelock Factory}
+
+The timelock factory creates a trusted contract for the token's ecosystem, which is used to mitigate short-term decision making for user safety. One big loss of value for a token's ecosystem is the burning of the LP shares done by most Protocols. This causes significant loss for the Protocol and turns a potential revenue generating asset into a drain. By creating a trusted contract that is locked by code, users can trust the liquidity for their project will not be removed, but token holders can mitigate significant losses to their ecosystem.
+
+\subsubsection{Vesting Modules}
 
 Additionally, the portion of the tokens that are typically reserved for the developers of the token project are not given until the token project is fully liquid. Significant losses to retail users have come from sells in the bonding curve phase. A developer aiming for longer term support should be able to wait for the token project leaving the bonding curve. Plus, once a token project leaves the bonding curve, the price impact of a developer selling their shares is not as impactful due to the liquidity not being concentrated. We have also seen many token projects recover from the original developer selling their shares when the token project is liquid. 
 
-\section{Protocol and Interface Fees}
+\section{Protocol and Interface Fee Structure}
 
-For providing this ecosystem, Doppler takes a small protocol fee, which is by default on.  Optionally, interfaces can additionally take an additional additive fee. The total fees taken is capped at 100 bps. Doppler takes 10 bps or 17.6\% of the interface fee, whichever is higher. This effectively means that interfaces can take up to a 85 bps fee. The Protocol and Interface fee are generated based on the LP fee from the hook itself. 
+Doppler implements a balanced fee structure designed to align incentives between protocol stakeholders while maintaining competitive market dynamics. The system incorporates both protocol-level and interface-level fees, with built-in mechanisms to ensure fair value distribution across the ecosystem.
 
-By enshrining a large interface fee, this will incentivize interfaces to coalesce around a single standard. This coalescence will improve trading safety and discoverability for other projects using the standard. It will also allow interfaces to focus on what they are best at producing instead of focusing on the market structure.
+\subsection{Core Fee Architecture}
+The protocol establishes a maximum combined fee ceiling of 250 basis points (bps) to maintain market efficiency. Within this framework, Doppler's base protocol fee follows a dynamic structure: the protocol receives either 10 bps or 10\% of the interface fee, whichever generates higher revenue. This design creates a sustainable funding mechanism for ongoing protocol development while preserving competitive market dynamics.
+
+\subsubsection{Interface Fee Implementation}
+
+The fee structure allows interface providers to capture up to 225 bps in fees, creating substantial incentives for interface development and ecosystem growth. This generous interface fee allocation serves a strategic purpose: it encourages interface consolidation around standardized implementations, which enhances both trading safety and asset discoverability across the ecosystem.
+
+By establishing significant interface fee potential, the protocol motivates developers to focus on interface optimization rather than competing through divergent market structures. This consolidation effect benefits the broader ecosystem by reducing market fragmentation and improving the overall trading experience.
+
+\subsubsection{Migration and Liquidity Fee Distribution}
+The migration factory implements an additional 5\% fee on swap activity, with the remaining fee revenue directed to the timelock contract. This fee split ensures sustainable funding for protocol maintenance while preserving significant value for long-term liquidity providers.
+
+\subsection{Design Vision}
+The fee structure's design produces several key benefits for the ecosystem.
+
+First, the generous interface fee allowance encourages the development of high-quality interfaces, improving the overall user experience. By enabling meaningful revenue capture for interface providers, the protocol promotes investment in superior trading tools and safety mechanisms.
+
+Second, the fee structure's emphasis on interface creation helps establish consistent standards across the ecosystem. This standardization simplifies the trading experience for users while reducing the technical overhead required to interact with multiple disparate systems.
+
+The combination of protocol and interface fees creates a sustainable economic model that supports continued protocol development while maintaining competitive market dynamics. This balanced approach ensures the long-term viability of the ecosystem while preserving sufficient incentives for all participants."
 
 \section{Summary}
 
-Doppler is a liquidity bootstrapping ecosystem, designed on top of \textsc{Uniswap v4} for efficient price discovery of assets. Doppler additionally provides safe standards for token trading, including a factory for the deployment of ERC20s with known bytecode.
+Doppler represents a significant advancement in decentralized market infrastructure, introducing a comprehensive solution for the persistent challenges of liquidity bootstrapping and price discovery. The protocol's core innovation lies in its hybrid Dutch auction and dynamic bonding curve mechanism. This combination creates an efficient price discovery process that protects against common exploitation vectors while enabling automated market formation. Doppler's modular architecture extends beyond price discovery to address the broader challenges of market formation. The system's factory modules enable standardized token deployment with verifiable bytecode, automated liquidity provision, and high-quality standards.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{main}
